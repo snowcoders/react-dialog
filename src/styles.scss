@@ -1,7 +1,5 @@
 .sci-react-dialog {
     display: flex;
-    align-items: center;
-    justify-content: center;
 
     position: fixed;
     height: 100vh;
@@ -9,15 +7,20 @@
     top: 0px;
     left: 0px;
 
+    // Most people will want the dialog to be hidden by default
+    // visibility: hidden;
+    // Also, without transitioning or animating the visibility property, your exit animation may not look correct
+    // transition: visibility 250ms;
+
     &.visible {
-        // You'll need to have visibility: hidden or display none here. Since it's up to the developer, we didn't add it ourselves.
+        // And visible when it's supposed to be showing
+        //visibility: visible;
     }
 
     > .overlay {
         flex: 1 1 0px;
-        height: 100%;
-        
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
 
@@ -25,6 +28,7 @@
 
         > .dialog {
             flex: 0 0 auto;
+            max-width: 100%;
         }
     }
 }
