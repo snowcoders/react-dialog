@@ -1,10 +1,11 @@
 import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 
 import { Dialog, IDialogProps } from "./component";
 
 import { expect } from 'chai';
 import { mock, spy } from 'sinon';
-import { shallow, configure } from "enzyme";
+import { shallow, ShallowWrapper, mount, configure, ReactWrapper } from "enzyme";
 
 import { Key } from 'ts-keycode-enum';
 
@@ -63,125 +64,185 @@ describe("Dialog", () => {
             }).to.not.throw();
         });
 
-        xit("Click dialog doesn't close", () => {
-            let fakeMouseEvent = {
-                stopPropagation: () => { }
-            };
+        it("Click dialog doesn't close", () => {
             let onBackgroundClickSpy = spy();
             defaultProps.onBackgroundClick = onBackgroundClickSpy;
 
-            let wrapper = shallow(<Dialog {...defaultProps} />);
-            wrapper.find(".dialog").simulate("click", fakeMouseEvent);
+            let wrapper = mount(<Dialog {...defaultProps} />);
+            wrapper.find(".dialog").simulate("click");
             expect(onBackgroundClickSpy.called).to.be.false;
         });
     });
 
     describe("Ref required methods", () => {
-        let mockRef: any;
+        let focusSpy: sinon.SinonSpy = spy();
         // Since we are setting the focus on mount, we have to set the ref before we start
         class CustomDialog extends Dialog {
             constructor(props) {
                 super(props);
-                this.setDialogRef(mockRef);
+                this.setDialogRef({
+                    focus: focusSpy
+                } as any);
             }
         }
 
         beforeEach(() => {
-            mockRef = {
-                focus: spy()
-            };
+            focusSpy.reset();
+        });
+
+        afterEach(() => {
+            focusSpy.reset();
         });
 
         describe("Focus", () => {
-            xit("Focus is set on mount if visible is true", () => {
+            it("Focus is set on mount if visible is true", () => {
                 let wrapper = shallow(<CustomDialog isVisible={true} />, { lifecycleExperimental: true });
-                expect(mockRef.focus.calledOnce).to.be.true;
+                expect(focusSpy.calledOnce).to.be.true;
             });
 
             it("Focus is not set on mount if visible is false", () => {
                 let wrapper = shallow(<CustomDialog isVisible={false} />, { lifecycleExperimental: true });
-                expect(mockRef.focus.calledOnce).to.be.false;
+                expect(focusSpy.called).to.be.false;
             });
 
             it("Focus is set when component starts closed then is visible", () => {
                 let wrapper = shallow(<CustomDialog isVisible={false} />, { lifecycleExperimental: true });
-                expect(mockRef.focus.calledOnce).to.be.false;
+                expect(focusSpy.called).to.be.false;
+                focusSpy.reset();
                 wrapper.setProps({
                     isVisible: true
                 });
-                expect(mockRef.focus.calledOnce).to.be.true;
+                expect(focusSpy.called).to.be.true;
+                focusSpy.reset();
                 wrapper.setProps({
                     isVisible: false
                 });
-                expect(mockRef.focus.calledOnce).to.be.true;
+                expect(focusSpy.called).to.be.false;
             });
-
-            xit("Focus is set when component is done animating", () => {
+            it("Focus is set when component is done animating", () => {
                 let wrapper = shallow(<CustomDialog isVisible={true} />);
                 // Even though the focus gets called, the element is animating and may be visibility: hidden.
                 // In this case, the focus won't work and we have to call focus after the animation is complete
-                expect(mockRef.focus.calledOnce, "1").to.be.true;
-                mockRef.focus.reset();
+                expect(focusSpy.calledOnce, "1").to.be.true;
+                focusSpy.reset();
                 wrapper.first().props().onAnimationEnd();
-                expect(mockRef.focus.calledOnce, "2").to.be.true;
-                mockRef.focus.reset();
+                expect(focusSpy.calledOnce, "2").to.be.true;
+                focusSpy.reset();
                 wrapper.first().props().onTransitionEnd();
-                expect(mockRef.focus.calledOnce, "3").to.be.true;
-                mockRef.focus.reset();
+                expect(focusSpy.calledOnce, "3").to.be.true;
+                focusSpy.reset();
             });
 
             it("Focus is not set when component is done animating but not visible", () => {
                 let wrapper = shallow(<CustomDialog isVisible={false} />);
                 // Even though the focus gets called, the element is animating and may be visibility: hidden.
                 // In this case, the focus won't work and we have to call focus after the animation is complete
-                expect(mockRef.focus.calledOnce, "1").to.be.false;
-                mockRef.focus.reset();
+                expect(focusSpy.calledOnce, "1").to.be.false;
+                focusSpy.reset();
                 wrapper.first().props().onAnimationEnd();
-                expect(mockRef.focus.calledOnce, "2").to.be.false;
-                mockRef.focus.reset();
+                expect(focusSpy.calledOnce, "2").to.be.false;
+                focusSpy.reset();
                 wrapper.first().props().onTransitionEnd();
-                expect(mockRef.focus.calledOnce, "3").to.be.false;
-                mockRef.focus.reset();
+                expect(focusSpy.calledOnce, "3").to.be.false;
+                focusSpy.reset();
+            });
+
+            it("Focus is set on original element after close", () => {
+                let wrapper = shallow(<CustomDialog isVisible={true} />);
+                focusSpy.reset();
+
+                // Set the state to something that doesn't have a focus method
+                wrapper.setState({
+                    previousElementBeforeOpen: {
+                        focus: undefined
+                    }
+                });
+
+                expect(() => {
+                    wrapper.setProps({
+                        isVisible: false
+                    })
+                }).to.not.throw();
             });
         });
 
         describe("Keyboarding", () => {
-            xit("Escape key fires onBackgroundClick", () => {
+            let tabFunction: (dialog: ShallowWrapper<any, any> | ReactWrapper<any, any>, key: Key, isShift?: boolean) => void;
+
+            before(() => {
+                tabFunction = (dialog: ShallowWrapper<any, any> | ReactWrapper<any, any>, key: Key, isShift: boolean = false) => {
+                    let tabIndexedElements = dialog.find("[tabIndex=1]").first();
+                    tabIndexedElements.simulate('keyDown', {
+                        charCode: key,
+                        keyCode: key,
+                        shiftKey: isShift,
+                        isDefaultPrevented: () => { return false; },
+                        preventDefault: () => { }
+                    } as any);
+                }
+            });
+            it("Escape key fires onBackgroundClick", () => {
                 let onBackgroundClickSpy = spy();
                 defaultProps.onBackgroundClick = onBackgroundClickSpy;
 
                 let wrapper = shallow(<CustomDialog {...defaultProps} isVisible={true} />);
-                let tabIndexedElements = wrapper.find("[tabIndex=1]");
-                expect(tabIndexedElements).to.have.length(1);
-                tabIndexedElements.props().onKeyDown({
-                    charCode: Key.Escape,
-                    keyCode: Key.Escape,
-                    isDefaultPrevented: () => { return false; },
-                    preventDefault: () => { }
-                } as any);
+                tabFunction(wrapper, Key.Escape);
                 expect(onBackgroundClickSpy.calledOnce).to.be.true;
             });
-            xit("Tab key moves to next element", () => {
-                let wrapper = shallow(<CustomDialog isVisible={true} />);
-                let tabIndexedElements = wrapper.find("[tabIndex=1]");
-                expect(tabIndexedElements).to.have.length(1);
-                tabIndexedElements.props().onKeyDown({
-                    charCode: Key.Tab,
-                    keyCode: Key.Tab,
-                    isDefaultPrevented: () => { return false; },
-                } as any);
+            it("Tab key stays on dialog when no children elements", () => {
+                let wrapper = mount(<Dialog isVisible={true} />);
+                let oldActive = document.activeElement;
+
+                tabFunction(wrapper, Key.Tab);
+
+                let newActive = document.activeElement;
+                expect(newActive).to.equal(oldActive);
             });
-            xit("Any other key doesn't close", () => {
+            xit("Tab key stays moves between elements when tabbing forward", () => {
+                let wrapper = mount(<Dialog isVisible={true}>
+                    <input className="a" type="text" />
+                    <input className="b" type="text" />
+                </Dialog>);
+
+                let oldActive: HTMLElement = null;
+                let newActive: HTMLElement = null;
+
+                // First time running, old active should be the dialog
+                oldActive = document.activeElement as HTMLElement;
+                tabFunction(wrapper, Key.Tab);
+                newActive = document.activeElement as HTMLElement;
+                expect(oldActive.className).to.contain("dialog");
+                expect(newActive.className).to.equal("a");
+
+                // And from now on we should always be inside the dialog
+                //for (let x = 0; x < 4; x++) {
+                // Second time old should be a, new should be b
+                oldActive = document.activeElement as HTMLElement;
+                tabFunction(wrapper, Key.Tab);
+                newActive = document.activeElement as HTMLElement;
+                expect(oldActive.className, "1").to.equal("a");
+                expect(newActive.className, "2").to.equal("b");
+
+                // Now they switch
+                oldActive = document.activeElement as HTMLElement;
+                tabFunction(wrapper, Key.Tab);
+                newActive = document.activeElement as HTMLElement;
+                expect(oldActive.className, "3").to.equal("b");
+                expect(newActive.className, "4").to.equal("a");
+                //}
+            });
+            it("Any other key doesn't close", () => {
                 let onBackgroundClickSpy = spy();
                 defaultProps.onBackgroundClick = onBackgroundClickSpy;
 
-                let wrapper = shallow(<CustomDialog isVisible={true} />);
+                let wrapper = mount(<Dialog isVisible={true} />);
                 let tabIndexedElements = wrapper.find("[tabIndex=1]");
                 expect(tabIndexedElements).to.have.length(1);
                 tabIndexedElements.props().onKeyDown({
                     charCode: Key.R,
                     keyCode: Key.R,
                     isDefaultPrevented: () => { return false; },
+                    preventDefault: () => { },
                 } as any);
 
                 expect(onBackgroundClickSpy.calledOnce).to.be.false;

@@ -54,9 +54,9 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
         } else if (this.props.isVisible === false &&
             this.props.isVisible !== oldProps.isVisible) {
             // The dialog is going from visible to not visible
-            let htmlElement = this.state.previousElementBeforeOpen as HTMLElement;
-            if (htmlElement != null && htmlElement.focus) {
-                htmlElement.focus();
+            let htmlElement = this.state.previousElementBeforeOpen;
+            if (htmlElement != null && (htmlElement as any).focus != null) {
+                (htmlElement as any).focus();
             }
         }
     }
@@ -99,18 +99,16 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
     }
 
     private handleEscapeClick(event: React.KeyboardEvent<HTMLDivElement>): boolean {
-        if (!event.isDefaultPrevented() && event.keyCode &&
-            event.keyCode === Key.Escape) {
-            event.preventDefault();
-            this.onBackgroundClick(event);
-            return true;
-        } else {
+        if (event.isDefaultPrevented() || event.keyCode !== Key.Escape) {
             return false;
         }
+
+        event.preventDefault();
+        this.onBackgroundClick(event);
+        return true;
     }
     private handleTabClick(event: React.KeyboardEvent<HTMLDivElement>): boolean {
-        if (event.isDefaultPrevented() || event.keyCode == null &&
-            event.keyCode !== Key.Tab) {
+        if (event.isDefaultPrevented() || event.keyCode !== Key.Tab) {
             return false;
         }
 
@@ -119,18 +117,22 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
         let last = tabbableElements[tabbableElements.length - 1];
 
         if (first === undefined) {
+            console.log("1");
             // This has no tabbable elements, set focus back on the dialog itself
             this.dialogRef.focus();
             event.preventDefault();
         }
         else if (document.activeElement === this.dialogRef || event.target === last && !event.shiftKey) {
+            console.log("2");
             first.focus();
             event.preventDefault();
         } else if (event.target === first && event.shiftKey) {
+            console.log("3");
             last.focus();
             event.preventDefault();
         }
 
+        console.log("4");
         return true;
     }
 
