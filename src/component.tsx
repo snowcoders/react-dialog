@@ -6,27 +6,58 @@ import * as tabbable from "tabbable";
 import { Key } from "ts-keycode-enum";
 
 export interface IDialogProps extends React.HTMLAttributes<HTMLDivElement> {
-    onBackgroundClick?: () => void;
+    /**
+     * Called before the default onKeyDown handlers are invoked.
+     * @returns true if the key down event was handled and further key down events should not be handled
+     */
+    onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => boolean;
+    /**
+     * Executed whenever the user presses Escape or clicks the background
+     */
+    onBackgroundClick?: (event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => void;
+    /**
+     * If the base styles should be disabled (though if the base styles don't work for you, we'd love to know why!)
+     */
     isBaseStylesDisabled?: boolean;
+    /**
+     * If the dialog is currently visible or not. The dialog component should always be mounted (so that animations work).
+     * If you dismount the component before the animation finishes, the exit animation will likely look like it has not run.
+     */
     isVisible: boolean;
 }
 
-export class Dialog extends React.Component<IDialogProps> {
+export interface IDialogState {
+    previousElementBeforeOpen: Element;
+}
+
+export class Dialog extends React.Component<IDialogProps, IDialogState> {
     private dialogRef: HTMLDivElement;
 
     componentDidMount() {
         if (this.props.isVisible === true) {
+            this.setState({
+                previousElementBeforeOpen: document.activeElement
+            });
             this.dialogRef.focus();
         }
     }
 
     componentDidUpdate(oldProps: IDialogProps) {
-        // Needed for when the root level element is not animated
         if (this.props.isVisible === true &&
             this.props.isVisible !== oldProps.isVisible) {
-
+            // The dialog is going from not visible to visible
             this.dialogRef.scrollTop = 0;
+            this.setState({
+                previousElementBeforeOpen: document.activeElement
+            });
             this.dialogRef.focus();
+        } else if (this.props.isVisible === false &&
+            this.props.isVisible !== oldProps.isVisible) {
+            // The dialog is going from visible to not visible
+            let htmlElement = this.state.previousElementBeforeOpen as HTMLElement;
+            if (htmlElement.focus) {
+                htmlElement.focus();
+            }
         }
     }
 
@@ -56,6 +87,9 @@ export class Dialog extends React.Component<IDialogProps> {
     }
 
     private onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (this.props.onKeyDown != null && this.props.onKeyDown(event)) {
+            return;
+        }
         if (this.handleEscapeClick(event)) {
             return;
         }
@@ -68,7 +102,7 @@ export class Dialog extends React.Component<IDialogProps> {
         if (!event.isDefaultPrevented() && event.keyCode &&
             event.keyCode === Key.Escape) {
             event.preventDefault();
-            this.onBackgroundClick();
+            this.onBackgroundClick(event);
             return true;
         } else {
             return false;
@@ -107,9 +141,9 @@ export class Dialog extends React.Component<IDialogProps> {
         this.dialogRef.focus();
     }
 
-    private onBackgroundClick = () => {
+    private onBackgroundClick = (event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
         if (this.props.onBackgroundClick) {
-            this.props.onBackgroundClick();
+            this.props.onBackgroundClick(event);
         }
     }
 }
