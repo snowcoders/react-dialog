@@ -3,7 +3,6 @@ module.exports = function (config) {
     config.set({
         frameworks: ["karma-typescript", "mocha", "chai"],
         files: [
-            { pattern: 'node_modules/babel-polyfill/browser.js', instrument: false },
             { pattern: "src/**/*.tsx" }
         ],
 
@@ -11,7 +10,7 @@ module.exports = function (config) {
             "**/*.tsx": ["karma-typescript"]
         },
         port: 8081,
-        browsers: ["PhantomJS"],
+        browsers: ["jsdom"],
         reporters: ["mocha", "karma-typescript"],
         autoWatch: false,
         singleRun: true,
@@ -27,9 +26,9 @@ module.exports = function (config) {
                 threshold: {
                     file: {
                         statements: -10,
-                        branches: 100,
+                        branches: 50,
                         functions: 100,
-                        lines: 100,
+                        lines: 80,
                     }
                 }
             }
