@@ -1,10 +1,11 @@
 import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 
 import { Dialog, IDialogProps } from "./component";
 
 import { expect } from 'chai';
 import { mock, spy } from 'sinon';
-import { shallow, configure } from "enzyme";
+import { shallow, mount, configure } from "enzyme";
 
 import { Key } from 'ts-keycode-enum';
 
@@ -63,15 +64,12 @@ describe("Dialog", () => {
             }).to.not.throw();
         });
 
-        xit("Click dialog doesn't close", () => {
-            let fakeMouseEvent = {
-                stopPropagation: () => { }
-            };
+        it.only("Click dialog doesn't close", () => {
             let onBackgroundClickSpy = spy();
             defaultProps.onBackgroundClick = onBackgroundClickSpy;
 
-            let wrapper = shallow(<Dialog {...defaultProps} />);
-            wrapper.find(".dialog").simulate("click", fakeMouseEvent);
+            let wrapper = mount(<Dialog {...defaultProps} />);
+            wrapper.find(".dialog").simulate("click");
             expect(onBackgroundClickSpy.called).to.be.false;
         });
     });
