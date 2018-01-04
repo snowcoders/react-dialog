@@ -55,7 +55,7 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
             this.props.isVisible !== oldProps.isVisible) {
             // The dialog is going from visible to not visible
             let htmlElement = this.state.previousElementBeforeOpen as HTMLElement;
-            if (htmlElement.focus) {
+            if (htmlElement != null && htmlElement.focus) {
                 htmlElement.focus();
             }
         }

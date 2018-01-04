@@ -93,7 +93,7 @@ describe("Dialog", () => {
         });
 
         describe("Focus", () => {
-            it("Focus is set on mount if visible is true", () => {
+            xit("Focus is set on mount if visible is true", () => {
                 let wrapper = shallow(<CustomDialog isVisible={true} />, { lifecycleExperimental: true });
                 expect(mockRef.focus.calledOnce).to.be.true;
             });
@@ -116,7 +116,7 @@ describe("Dialog", () => {
                 expect(mockRef.focus.calledOnce).to.be.true;
             });
 
-            it("Focus is set when component is done animating", () => {
+            xit("Focus is set when component is done animating", () => {
                 let wrapper = shallow(<CustomDialog isVisible={true} />);
                 // Even though the focus gets called, the element is animating and may be visibility: hidden.
                 // In this case, the focus won't work and we have to call focus after the animation is complete
@@ -146,7 +146,7 @@ describe("Dialog", () => {
         });
 
         describe("Keyboarding", () => {
-            it("Escape key fires onBackgroundClick", () => {
+            xit("Escape key fires onBackgroundClick", () => {
                 let onBackgroundClickSpy = spy();
                 defaultProps.onBackgroundClick = onBackgroundClickSpy;
 
