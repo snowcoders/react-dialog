@@ -117,22 +117,18 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
         let last = tabbableElements[tabbableElements.length - 1];
 
         if (first === undefined) {
-            console.log("1");
             // This has no tabbable elements, set focus back on the dialog itself
             this.dialogRef.focus();
             event.preventDefault();
         }
-        else if (document.activeElement === this.dialogRef || event.target === last && !event.shiftKey) {
-            console.log("2");
+        else if ((document.activeElement === this.dialogRef || document.activeElement === last) && !event.shiftKey) {
             first.focus();
             event.preventDefault();
-        } else if (event.target === first && event.shiftKey) {
-            console.log("3");
+        } else if ((document.activeElement === this.dialogRef || document.activeElement === first) && event.shiftKey) {
             last.focus();
             event.preventDefault();
         }
 
-        console.log("4");
         return true;
     }
 

@@ -26,11 +26,15 @@ module.exports = function (config) {
                 threshold: {
                     file: {
                         statements: -10,
-                        branches: 50,
+                        branches: 100,
                         functions: 100,
-                        lines: 80,
+                        lines: 100,
                     }
                 }
+            },
+            reports: {
+                "html": "coverage",
+                "text-summary": ""
             }
         }
     })

@@ -172,7 +172,7 @@ describe("Dialog", () => {
             before(() => {
                 tabFunction = (dialog: ShallowWrapper<any, any> | ReactWrapper<any, any>, key: Key, isShift: boolean = false) => {
                     let tabIndexedElements = dialog.find("[tabIndex=1]").first();
-                    tabIndexedElements.simulate('keyDown', {
+                    tabIndexedElements.props().onKeyDown({
                         charCode: key,
                         keyCode: key,
                         shiftKey: isShift,
@@ -198,7 +198,7 @@ describe("Dialog", () => {
                 let newActive = document.activeElement;
                 expect(newActive).to.equal(oldActive);
             });
-            xit("Tab key stays moves between elements when tabbing forward", () => {
+            it("Tab key stays moves between elements when tabbing forward", () => {
                 let wrapper = mount(<Dialog isVisible={true}>
                     <input className="a" type="text" />
                     <input className="b" type="text" />
@@ -215,21 +215,56 @@ describe("Dialog", () => {
                 expect(newActive.className).to.equal("a");
 
                 // And from now on we should always be inside the dialog
-                //for (let x = 0; x < 4; x++) {
-                // Second time old should be a, new should be b
-                oldActive = document.activeElement as HTMLElement;
-                tabFunction(wrapper, Key.Tab);
-                newActive = document.activeElement as HTMLElement;
-                expect(oldActive.className, "1").to.equal("a");
-                expect(newActive.className, "2").to.equal("b");
+                for (let x = 0; x < 4; x++) {
+                    // Second time old should be a, new should be b
+                    oldActive = document.activeElement as HTMLElement;
+                    tabFunction(wrapper, Key.Tab);
+                    (wrapper.find(".b").getDOMNode() as HTMLElement).focus(); // Since we're finding it hard to actually perform a real user tab, just fake the focus
+                    newActive = document.activeElement as HTMLElement;
+                    expect(oldActive.className, "1").to.equal("a");
+                    expect(newActive.className, "2").to.equal("b");
 
-                // Now they switch
+                    // Now they switch
+                    oldActive = document.activeElement as HTMLElement;
+                    tabFunction(wrapper, Key.Tab);
+                    newActive = document.activeElement as HTMLElement;
+                    expect(oldActive.className, "3").to.equal("b");
+                    expect(newActive.className, "4").to.equal("a");
+                }
+            });
+            it("Tab key stays moves between elements when tabbing backward", () => {
+                let wrapper = mount(<Dialog isVisible={true}>
+                    <input className="a" type="text" />
+                    <input className="b" type="text" />
+                </Dialog>);
+
+                let oldActive: HTMLElement = null;
+                let newActive: HTMLElement = null;
+
+                // First time running, old active should be the dialog
                 oldActive = document.activeElement as HTMLElement;
-                tabFunction(wrapper, Key.Tab);
+                tabFunction(wrapper, Key.Tab, true);
                 newActive = document.activeElement as HTMLElement;
-                expect(oldActive.className, "3").to.equal("b");
-                expect(newActive.className, "4").to.equal("a");
-                //}
+                expect(oldActive.className).to.contain("dialog");
+                expect(newActive.className).to.equal("b");
+
+                // And from now on we should always be inside the dialog
+                for (let x = 0; x < 4; x++) {
+                    // Second time old should be b, new should be a
+                    oldActive = document.activeElement as HTMLElement;
+                    tabFunction(wrapper, Key.Tab, true);
+                    (wrapper.find(".a").getDOMNode() as HTMLElement).focus(); // Since we're finding it hard to actually perform a real user tab, just fake the focus
+                    newActive = document.activeElement as HTMLElement;
+                    expect(oldActive.className, "1").to.equal("b");
+                    expect(newActive.className, "2").to.equal("a");
+
+                    // Now they switch
+                    oldActive = document.activeElement as HTMLElement;
+                    tabFunction(wrapper, Key.Tab, true);
+                    newActive = document.activeElement as HTMLElement;
+                    expect(oldActive.className, "3").to.equal("a");
+                    expect(newActive.className, "4").to.equal("b");
+                }
             });
             it("Any other key doesn't close", () => {
                 let onBackgroundClickSpy = spy();
@@ -238,12 +273,18 @@ describe("Dialog", () => {
                 let wrapper = mount(<Dialog isVisible={true} />);
                 let tabIndexedElements = wrapper.find("[tabIndex=1]");
                 expect(tabIndexedElements).to.have.length(1);
-                tabIndexedElements.props().onKeyDown({
-                    charCode: Key.R,
-                    keyCode: Key.R,
-                    isDefaultPrevented: () => { return false; },
-                    preventDefault: () => { },
-                } as any);
+                tabFunction(wrapper, Key.R);
+
+                expect(onBackgroundClickSpy.calledOnce).to.be.false;
+            });
+            it("Overriding onKeyDown means escape isn't called", () => {
+                let onBackgroundClickSpy = spy();
+                defaultProps.onBackgroundClick = onBackgroundClickSpy;
+
+                let wrapper = mount(<Dialog isVisible={true} onKeyDown={() => { return true; }} />);
+                let tabIndexedElements = wrapper.find("[tabIndex=1]");
+                expect(tabIndexedElements).to.have.length(1);
+                tabFunction(wrapper, Key.Escape);
 
                 expect(onBackgroundClickSpy.calledOnce).to.be.false;
             });
