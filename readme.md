@@ -5,7 +5,7 @@
 `npm install --save @snowcoders/react-dialog save-prefix ~` 
 
 # Parent Library
-This component is part of a larger components library, [react-ui-base](https://github.com/snowcoders/react-ui-base). The goal is to keep all the core logic and basic css in a single location, that way building out new UI component libraries not only is cheaper but faster. 
+This component is part of a larger components library, [react-ui-base](https://github.com/snowcoders/react-ui-base). The goal is to keep all the core logic and base css styles in a single location, that way building out new UI component libraries cheaper and faster (and less buggy). 
 
 We highly recommend visiting the react-ui-base repository to understand how to customize the css along with see examples.
 
