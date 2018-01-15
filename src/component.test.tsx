@@ -74,14 +74,37 @@ describe("Dialog", () => {
         });
     });
 
+    it("Focus is not set if active element is child", () => {
+        let focusSpy: sinon.SinonSpy = spy();
+        // Since we are setting the focus on mount, we have to set the ref before we start
+        class CustomDialog extends Dialog {
+            constructor(props) {
+                super(props);
+                this.onSetDialogRef({
+                    focus: focusSpy,
+                    contains: () => { return true; }
+                } as any);
+            }
+        }
+
+        let wrapper = shallow(<CustomDialog isVisible={true} onTransitionEnd={() => { }} />);
+        focusSpy.reset();
+        wrapper.find(".sci-react-dialog").props().onTransitionEnd({
+            isDefaultPrevented: () => { return false; }
+        } as any);
+
+        expect(focusSpy.called).to.be.false;
+    });
+
     describe("Ref required methods", () => {
         let focusSpy: sinon.SinonSpy = spy();
         // Since we are setting the focus on mount, we have to set the ref before we start
         class CustomDialog extends Dialog {
             constructor(props) {
                 super(props);
-                this.setDialogRef({
-                    focus: focusSpy
+                this.onSetDialogRef({
+                    focus: focusSpy,
+                    contains: () => { return false; }
                 } as any);
             }
         }
@@ -164,6 +187,46 @@ describe("Dialog", () => {
                     })
                 }).to.not.throw();
             });
+
+            it("Focus is set after animation is complete", () => {
+                let wrapper = shallow(<CustomDialog isVisible={true} onAnimationEnd={() => { }} />);
+                focusSpy.reset();
+
+                wrapper.find(".sci-react-dialog").props().onAnimationEnd({
+                    isDefaultPrevented: () => { return false; }
+                } as any);
+                expect(focusSpy.calledOnce).to.be.true;
+            });
+
+            it("Focus is not set if animation is prevented", () => {
+                let wrapper = shallow(<CustomDialog isVisible={true} onAnimationEnd={() => { }} />);
+                focusSpy.reset();
+
+                wrapper.find(".sci-react-dialog").props().onAnimationEnd({
+                    isDefaultPrevented: () => { return true; }
+                } as any);
+                expect(focusSpy.calledOnce).to.be.false;
+            });
+
+            it("Focus is set after transition is complete", () => {
+                let wrapper = shallow(<CustomDialog isVisible={true} onTransitionEnd={() => { }} />);
+                focusSpy.reset();
+
+                wrapper.find(".sci-react-dialog").props().onTransitionEnd({
+                    isDefaultPrevented: () => { return false; }
+                } as any);
+                expect(focusSpy.calledOnce).to.be.true;
+            });
+
+            it("Focus is not set if transition is prevented", () => {
+                let wrapper = shallow(<CustomDialog isVisible={true} onTransitionEnd={() => { }} />);
+                focusSpy.reset();
+
+                wrapper.find(".sci-react-dialog").props().onTransitionEnd({
+                    isDefaultPrevented: () => { return true; }
+                } as any);
+                expect(focusSpy.calledOnce).to.be.false;
+            });
         });
 
         describe("Keyboarding", () => {
@@ -177,6 +240,7 @@ describe("Dialog", () => {
                         keyCode: key,
                         shiftKey: isShift,
                         isDefaultPrevented: () => { return false; },
+                        stopPropagation: () => { },
                         preventDefault: () => { }
                     } as any);
                 }
@@ -204,8 +268,8 @@ describe("Dialog", () => {
                     <input className="b" type="text" />
                 </Dialog>);
 
-                let oldActive: HTMLElement = null;
-                let newActive: HTMLElement = null;
+                let oldActive: HTMLElement;
+                let newActive: HTMLElement;
 
                 // First time running, old active should be the dialog
                 oldActive = document.activeElement as HTMLElement;
@@ -238,8 +302,8 @@ describe("Dialog", () => {
                     <input className="b" type="text" />
                 </Dialog>);
 
-                let oldActive: HTMLElement = null;
-                let newActive: HTMLElement = null;
+                let oldActive: HTMLElement;
+                let newActive: HTMLElement;
 
                 // First time running, old active should be the dialog
                 oldActive = document.activeElement as HTMLElement;
