@@ -66,24 +66,37 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
         className = classNames({ "sci-react-dialog": isBaseStylesDisabled !== true }, className, { "visible": this.props.isVisible });
 
         return (
-            <div {...htmlProps} className={className} onAnimationEnd={this.setFocusIfVisible} onTransitionEnd={this.setFocusIfVisible}>
+            <div {...htmlProps} className={className} onAnimationEnd={this.onAnimationEnd} onTransitionEnd={this.onTransitionEnd}>
                 <div className="overlay" onClick={this.onBackgroundClick}>
-                    <div ref={this.setDialogRef} role="dialog" tabIndex={1} className="dialog" onClick={this.onDialogClick} onKeyDown={this.onKeyDown}>
+                    <div ref={this.onSetDialogRef} role="dialog" tabIndex={1} className="dialog" onClick={this.onDialogClick} onKeyDown={this.onKeyDown}>
                         {this.props.children}
                     </div>
                 </div>
             </div>);
     }
 
-    protected setDialogRef = (ref: HTMLDivElement) => {
+    protected onSetDialogRef = (ref: HTMLDivElement) => {
         this.dialogRef = ref;
     }
 
-    private setFocusIfVisible = () => {
-        // Needed when the root level element is animated
-        if (this.props.isVisible === true) {
-            this.dialogRef.focus();
+    private onAnimationEnd = (event: React.AnimationEvent<HTMLDivElement>) => {
+        if (this.props.onAnimationEnd != null) {
+            this.props.onAnimationEnd(event);
+            if (event.isDefaultPrevented()) {
+                return;
+            }
         }
+        this.setFocusIfVisible();
+    }
+
+    private onTransitionEnd = (event: React.TransitionEvent<HTMLDivElement>) => {
+        if (this.props.onTransitionEnd != null) {
+            this.props.onTransitionEnd(event);
+            if (event.isDefaultPrevented()) {
+                return;
+            }
+        }
+        this.setFocusIfVisible();
     }
 
     private onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -98,15 +111,28 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
         }
     }
 
+    private onDialogClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        // event.preventDefault();
+        event.stopPropagation();
+    }
+
+    private onBackgroundClick = (event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
+        if (this.props.onBackgroundClick) {
+            this.props.onBackgroundClick(event);
+        }
+    }
+
     private handleEscapeClick(event: React.KeyboardEvent<HTMLDivElement>): boolean {
         if (event.isDefaultPrevented() || event.keyCode !== Key.Escape) {
             return false;
         }
 
         event.preventDefault();
+        event.stopPropagation();
         this.onBackgroundClick(event);
         return true;
     }
+
     private handleTabClick(event: React.KeyboardEvent<HTMLDivElement>): boolean {
         if (event.isDefaultPrevented() || event.keyCode !== Key.Tab) {
             return false;
@@ -132,16 +158,16 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
         return true;
     }
 
-    private onDialogClick = (event: React.MouseEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        this.dialogRef.focus();
-    }
-
-    private onBackgroundClick = (event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
-        if (this.props.onBackgroundClick) {
-            this.props.onBackgroundClick(event);
+    // Needed when the root level element is animated
+    private setFocusIfVisible() {
+        if (this.props.isVisible === false) {
+            // If we aren't visible, no need to set focus
+            return;
         }
+        if (this.dialogRef.contains(document.activeElement)) {
+            // If we are focused on a subchild, no need to change focus
+            return;
+        }
+        this.dialogRef.focus();
     }
 }

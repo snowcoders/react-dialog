@@ -1,6 +1,4 @@
 .sci-react-dialog {
-    display: flex;
-
     position: fixed;
     height: 100vh;
     width: 100vw;
@@ -14,13 +12,14 @@
 
     &.visible {
         // And visible when it's supposed to be showing
-        //visibility: visible;
+        // visibility: visible;
     }
 
     > .overlay {
-        flex: 1 1 0px;
+        height: 100%;
+        width: 100%;
+        
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
 
