@@ -1,7 +1,5 @@
 import * as React from "react";
 
-import * as classNames from "classnames";
-
 import * as tabbable from "tabbable";
 import { Key } from "ts-keycode-enum";
 
@@ -63,10 +61,20 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
 
     render() {
         let { isBaseStylesDisabled, onBackgroundClick, isVisible, className, ...htmlProps } = this.props;
-        className = classNames({ "sci-react-dialog": isBaseStylesDisabled !== true }, className, { "visible": this.props.isVisible });
+
+        let classNameArray: string[] = [];
+        if (isBaseStylesDisabled !== true) {
+            classNameArray.push("sci-react-dialog");
+        }
+        if (className != null) {
+            classNameArray.push(className);
+        }
+        if (this.props.isVisible) {
+            classNameArray.push("visible");
+        }
 
         return (
-            <div {...htmlProps} className={className} onAnimationEnd={this.onAnimationEnd} onTransitionEnd={this.onTransitionEnd}>
+            <div {...htmlProps} className={classNameArray.join(" ")} onAnimationEnd={this.onAnimationEnd} onTransitionEnd={this.onTransitionEnd}>
                 <div className="overlay" onClick={this.onBackgroundClick}>
                     <div ref={this.onSetDialogRef} role="dialog" tabIndex={1} className="dialog" onClick={this.onDialogClick} onKeyDown={this.onKeyDown}>
                         {this.props.children}
@@ -146,8 +154,7 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
             // This has no tabbable elements, set focus back on the dialog itself
             this.dialogRef.focus();
             event.preventDefault();
-        }
-        else if ((document.activeElement === this.dialogRef || document.activeElement === last) && !event.shiftKey) {
+        } else if ((document.activeElement === this.dialogRef || document.activeElement === last) && !event.shiftKey) {
             first.focus();
             event.preventDefault();
         } else if ((document.activeElement === this.dialogRef || document.activeElement === first) && event.shiftKey) {
